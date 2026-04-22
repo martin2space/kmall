@@ -52,10 +52,10 @@ export default async function AdminDashboardPage() {
     validReviews.length > 0
       ? Math.round(
           validReviews.reduce(
-            (sum, e) =>
-              sum + (e.review!.totalScore / e.review!.maxTotalScore) * 100,
-            0
-          ) / validReviews.length
+  (sum: number, e) =>
+    sum + (e.review!.totalScore / e.review!.maxTotalScore) * 100,
+  0
+) / validReviews.length
         )
       : null;
 
