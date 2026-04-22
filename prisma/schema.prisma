@@ -59,6 +59,7 @@ model Standard {
   maxScore    Int
   passScore   Int
   periodType  PeriodType
+  isActive    Boolean    @default(true)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   reviewItems ReviewItem[]
