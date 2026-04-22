@@ -46,7 +46,7 @@ export default async function AdminDashboardPage() {
 
   const monthExamCount = monthCompletedExams.length;
   const validReviews = monthCompletedExams.filter(
-    (e) => e.review && e.review.maxTotalScore > 0
+    (e: (typeof monthCompletedExams)[number]) => e.review && e.review.maxTotalScore > 0
   );
   const avgPct =
     validReviews.length > 0
