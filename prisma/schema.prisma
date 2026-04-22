@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Store {
+  id         String   @id @default(cuid())
+  name       String
+  city       String
+  address    String?
+  createdAt  DateTime @default(now())
+  users      User[]
+  guidelines Guideline[]
+  standards  Standard[]
+}
+
+model User {
+  id          String    @id @default(cuid())
+  name        String
+  phone       String    @unique
+  role        Role      @default(STAFF)
+  storeId     String
+  store       Store     @relation(fields: [storeId], references: [id])
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  schedules   Schedule[]
+  reviews     Review[]
+  reviewsDone Review[]  @relation("ReviewedBy")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+model Guideline {
+  id         String   @id @default(cuid())
+  storeId    String
+  store      Store    @relation(fields: [storeId], references: [id])
+  category   String
+  title      String
+  content    String
+  imageUrls  String[]
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Standard {
+  id          String     @id @default(cuid())
+  storeId     String
+  store       Store      @relation(fields: [storeId], references: [id])
+  category    String
+  name        String
+  description String
+  maxScore    Int
+  passScore   Int
+  periodType  PeriodType
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  reviewItems ReviewItem[]
+}
+
+enum PeriodType {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+model Schedule {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  date      DateTime
+  shiftType String?
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tasks     Task[]
+  @@unique([userId, date])
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  scheduleId  String
+  schedule    Schedule  @relation(fields: [scheduleId], references: [id])
+  title       String
+  description String?
+  priority    Priority  @default(MEDIUM)
+  isDone      Boolean   @default(false)
+  doneAt      DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+enum Priority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+model Review {
+  id            String     @id @default(cuid())
+  staffId       String
+  staff         User       @relation(fields: [staffId], references: [id])
+  reviewerId    String
+  reviewer      User       @relation("ReviewedBy", fields: [reviewerId], references: [id])
+  periodType    PeriodType
+  periodLabel   String
+  totalScore    Int
+  maxTotalScore Int
+  note          String?
+  createdAt     DateTime   @default(now())
+  items         ReviewItem[]
+}
+
+model ReviewItem {
+  id         String   @id @default(cuid())
+  reviewId   String
+  review     Review   @relation(fields: [reviewId], references: [id])
+  standardId String
+  standard   Standard @relation(fields: [standardId], references: [id])
+  score      Int
+  isPassed   Boolean
+  note       String?
+}
