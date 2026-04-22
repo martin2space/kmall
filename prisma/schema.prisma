@@ -7,28 +7,32 @@ datasource db {
 }
 
 model Store {
-  id         String   @id @default(cuid())
+  id         String      @id @default(cuid())
   name       String
   city       String
   address    String?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime    @default(now())
   users      User[]
   guidelines Guideline[]
   standards  Standard[]
 }
 
 model User {
-  id          String    @id @default(cuid())
-  name        String
-  phone       String    @unique
-  role        Role      @default(STAFF)
-  storeId     String
-  store       Store     @relation(fields: [storeId], references: [id])
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  schedules   Schedule[]
-  reviews     Review[]
-  reviewsDone Review[]  @relation("ReviewedBy")
+  id                String             @id @default(cuid())
+  name              String
+  phone             String             @unique
+  role              Role               @default(STAFF)
+  storeId           String
+  store             Store              @relation(fields: [storeId], references: [id])
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  schedules         Schedule[]
+  reviews           Review[]
+  reviewsDone       Review[]           @relation("ReviewedBy")
+  attendanceRecords AttendanceRecord[]
+  trainingRecords   TrainingRecord[]
+  examSchedules     ExamSchedule[]     @relation("ExamAssignedTo")
+  examSchedulesDone ExamSchedule[]     @relation("ExamAssignedBy")
 }
 
 enum Role {
@@ -37,32 +41,34 @@ enum Role {
 }
 
 model Guideline {
-  id         String   @id @default(cuid())
-  storeId    String
-  store      Store    @relation(fields: [storeId], references: [id])
-  category   String
-  title      String
-  content    String
-  imageUrls  String[]
-  order      Int      @default(0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id])
+  category  String
+  title     String
+  content   String
+  imageUrls String[]
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Standard {
-  id          String     @id @default(cuid())
-  storeId     String
-  store       Store      @relation(fields: [storeId], references: [id])
-  category    String
-  name        String
-  description String
-  maxScore    Int
-  passScore   Int
-  periodType  PeriodType
-  isActive    Boolean    @default(true)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  reviewItems ReviewItem[]
+  id              String           @id @default(cuid())
+  storeId         String
+  store           Store            @relation(fields: [storeId], references: [id])
+  category        String
+  name            String
+  description     String
+  maxScore        Int
+  passScore       Int
+  periodType      PeriodType
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  reviewItems     ReviewItem[]
+  trainingRecords TrainingRecord[]
+  examSchedules   ExamSchedule[]
 }
 
 enum PeriodType {
@@ -81,6 +87,7 @@ model Schedule {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   tasks     Task[]
+
   @@unique([userId, date])
 }
 
@@ -103,18 +110,19 @@ enum Priority {
 }
 
 model Review {
-  id            String     @id @default(cuid())
+  id            String        @id @default(cuid())
   staffId       String
-  staff         User       @relation(fields: [staffId], references: [id])
+  staff         User          @relation(fields: [staffId], references: [id])
   reviewerId    String
-  reviewer      User       @relation("ReviewedBy", fields: [reviewerId], references: [id])
+  reviewer      User          @relation("ReviewedBy", fields: [reviewerId], references: [id])
   periodType    PeriodType
   periodLabel   String
   totalScore    Int
   maxTotalScore Int
   note          String?
-  createdAt     DateTime   @default(now())
+  createdAt     DateTime      @default(now())
   items         ReviewItem[]
+  examSchedule  ExamSchedule?
 }
 
 model ReviewItem {
@@ -126,4 +134,58 @@ model ReviewItem {
   score      Int
   isPassed   Boolean
   note       String?
+}
+
+// ─── 打卡记录 ─────────────────────────────────────────
+
+model AttendanceRecord {
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id])
+  type      AttendanceType
+  date      String         // "YYYY-MM-DD"
+  createdAt DateTime       @default(now())
+}
+
+enum AttendanceType {
+  CLOCK_IN
+  CLOCK_OUT
+}
+
+// ─── 培训记录 ─────────────────────────────────────────
+
+model TrainingRecord {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  standardId String
+  standard   Standard @relation(fields: [standardId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, standardId])
+}
+
+// ─── 考核安排 ─────────────────────────────────────────
+
+model ExamSchedule {
+  id           String     @id @default(cuid())
+  title        String
+  assignedToId String
+  assignedTo   User       @relation("ExamAssignedTo", fields: [assignedToId], references: [id])
+  assignedById String
+  assignedBy   User       @relation("ExamAssignedBy", fields: [assignedById], references: [id])
+  periodType   PeriodType
+  periodLabel  String
+  scheduledAt  DateTime?
+  status       ExamStatus @default(PENDING)
+  reviewId     String?    @unique
+  review       Review?    @relation(fields: [reviewId], references: [id])
+  standards    Standard[]
+  createdAt    DateTime   @default(now())
+}
+
+enum ExamStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
 }

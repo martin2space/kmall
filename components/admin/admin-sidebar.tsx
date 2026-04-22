@@ -12,6 +12,8 @@ const navItems = [
   { label: "店员管理", href: "/admin/staff" },
   { label: "培训标准", href: "/admin/standards" },
   { label: "排班管理", href: "/admin/schedules" },
+  { label: "考核管理", href: "/admin/exams" },
+  { label: "考核报告", href: "/admin/reports" },
 ];
 
 export default function AdminSidebar({ userEmail }: { userEmail: string }) {
