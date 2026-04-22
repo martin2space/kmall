@@ -13,28 +13,38 @@ export default async function StaffDashboardPage() {
 
   const today = new Date().toISOString().slice(0, 10);
 
-  const [todayAttendance, recentTraining, pendingExamCount] = await Promise.all([
-    prisma.attendanceRecord.findFirst({
-      where: { userId: user.id, date: today, type: "CLOCK_IN" },
-    }),
-    prisma.trainingRecord.findMany({
-      where: { userId: user.id },
-      include: { standard: { select: { name: true, category: true } } },
-      orderBy: { createdAt: "desc" },
-      take: 3,
-    }),
-    prisma.examSchedule.count({
-      where: { assignedToId: user.id, status: "PENDING" },
-    }),
-  ]);
+  const [todayAttendance, totalStandards, completedStandards, pendingExamCount, lastExam] =
+    await Promise.all([
+      prisma.attendanceRecord.findFirst({
+        where: { userId: user.id, date: today, type: "CLOCK_IN" },
+        select: { createdAt: true },
+      }),
+      prisma.standard.count({ where: { isActive: true } }),
+      prisma.trainingRecord.count({ where: { userId: user.id } }),
+      prisma.examSchedule.count({
+        where: { assignedToId: user.id, status: "PENDING" },
+      }),
+      prisma.examSchedule.findFirst({
+        where: { assignedToId: user.id, status: "COMPLETED" },
+        include: {
+          review: { select: { totalScore: true, maxTotalScore: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+
+  const lastReview = lastExam?.review ?? null;
 
   return (
     <DashboardClient
-      hasClockedIn={!!todayAttendance}
+      clockInTime={todayAttendance?.createdAt ?? null}
       userId={user.id}
       today={today}
-      recentTraining={recentTraining}
+      totalStandards={totalStandards}
+      completedStandards={completedStandards}
       pendingExamCount={pendingExamCount}
+      lastReview={lastReview ? { totalScore: lastReview.totalScore, maxTotalScore: lastReview.maxTotalScore } : null}
+      lastExamTitle={lastExam?.title ?? null}
     />
   );
 }
