@@ -137,7 +137,7 @@ export default async function AdminDashboardPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recentExams.map((exam) => {
+              {recentExams.map((exam: typeof recentExams[number]) => {
                 const review = exam.review;
                 const pct =
                   review && review.maxTotalScore > 0
