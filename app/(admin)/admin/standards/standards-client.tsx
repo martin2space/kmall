@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createStandard, updateStandard, toggleStandardActive } from "./actions";
-import { PeriodType } from "@prisma/client";
+import type { PeriodType } from "@/types/global";
 
 const CATEGORIES = [
   { value: "SERVICE", label: "服务" },

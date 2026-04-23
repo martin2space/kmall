@@ -39,7 +39,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { createExam, deleteExam } from "./actions";
-import { PeriodType } from "@prisma/client";
+import type { PeriodType } from "@/types/global";
 
 const STATUS_CONFIG: Record<string, { label: string; variant: "default" | "outline" | "secondary" }> = {
   PENDING: { label: "待考核", variant: "outline" },

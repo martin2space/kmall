@@ -3,9 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
-import { PeriodType } from "@prisma/client";
-
-function derivePeriodLabel(date: Date, periodType: PeriodType): string {
+import type { PeriodType } from "@/types/global";
+function derivePeriodLabel(
+  date: Date,
+  periodType: "DAILY" | "WEEKLY" | "MONTHLY"
+): string {
   if (periodType === "DAILY") return date.toISOString().slice(0, 10);
   if (periodType === "MONTHLY") return date.toISOString().slice(0, 7);
   // WEEKLY: ISO week

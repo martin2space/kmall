@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { PeriodType } from "@prisma/client";
+import type { PeriodType } from "@/types/global";
 
 type StandardData = {
   storeId: string;
