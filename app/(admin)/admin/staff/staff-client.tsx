@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createStaff, toggleStaffActive } from "./actions";
+import { createStaff, toggleStaffActive, updateStaff } from "./actions";
 
 type Store = { id: string; name: string };
 type Staff = {
@@ -36,12 +36,14 @@ type Staff = {
   name: string;
   phone: string;
   role: "ADMIN" | "STAFF";
+  storeId: string;
   isActive: boolean;
   createdAt: Date;
   store: { name: string };
 };
 
 const defaultForm = { name: "", phone: "", role: "STAFF" as "ADMIN" | "STAFF", storeId: "" };
+type StaffForm = typeof defaultForm;
 
 export default function StaffClient({
   staffList,
@@ -51,9 +53,13 @@ export default function StaffClient({
   stores: Store[];
 }) {
   const [showAdd, setShowAdd] = useState(false);
+  const [editing, setEditing] = useState<Staff | null>(null);
   const [form, setForm] = useState(defaultForm);
+  const [editForm, setEditForm] = useState<StaffForm>(defaultForm);
   const [formError, setFormError] = useState("");
+  const [editError, setEditError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [updating, setUpdating] = useState(false);
   const [toggling, setToggling] = useState<string | null>(null);
 
   async function handleCreate() {
@@ -64,6 +70,27 @@ export default function StaffClient({
     if (result.error) { setFormError(result.error); return; }
     setShowAdd(false);
     setForm(defaultForm);
+  }
+
+  function openEdit(staff: Staff) {
+    setEditing(staff);
+    setEditError("");
+    setEditForm({
+      name: staff.name,
+      phone: staff.phone,
+      role: staff.role,
+      storeId: staff.storeId,
+    });
+  }
+
+  async function handleUpdate() {
+    if (!editing) return;
+    setEditError("");
+    setUpdating(true);
+    const result = await updateStaff({ id: editing.id, ...editForm });
+    setUpdating(false);
+    if (result.error) { setEditError(result.error); return; }
+    setEditing(null);
   }
 
   async function handleToggle(id: string, current: boolean) {
@@ -90,12 +117,13 @@ export default function StaffClient({
               <TableHead>状态</TableHead>
               <TableHead>创建时间</TableHead>
               <TableHead className="w-24">启用</TableHead>
+              <TableHead className="w-24">操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {staffList.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-gray-400 py-8">
+                <TableCell colSpan={8} className="text-center text-gray-400 py-8">
                   暂无店员数据
                 </TableCell>
               </TableRow>
@@ -122,6 +150,11 @@ export default function StaffClient({
                     disabled={toggling === s.id}
                     onCheckedChange={() => handleToggle(s.id, s.isActive)}
                   />
+                </TableCell>
+                <TableCell>
+                  <Button variant="outline" size="sm" onClick={() => openEdit(s)}>
+                    编辑
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
@@ -193,6 +226,77 @@ export default function StaffClient({
             </Button>
             <Button onClick={handleCreate} disabled={submitting}>
               {submitting ? "创建中..." : "确认创建"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>编辑店员</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>姓名 *</Label>
+              <Input
+                placeholder="店员姓名"
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>手机号 *</Label>
+              <Input
+                placeholder="手机号"
+                value={editForm.phone}
+                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+              />
+              <p className="text-xs text-gray-400">
+                修改后登录账号同步变为：{editForm.phone || "手机号"}@fastcat.com
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label>角色 *</Label>
+              <Select
+                value={editForm.role}
+                onValueChange={(v) => setEditForm({ ...editForm, role: (v ?? "STAFF") as "ADMIN" | "STAFF" })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="STAFF">店员</SelectItem>
+                  <SelectItem value="ADMIN">管理员</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>所属门店 *</Label>
+              <Select
+                value={editForm.storeId}
+                onValueChange={(v) => setEditForm({ ...editForm, storeId: v ?? "" })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="选择门店" />
+                </SelectTrigger>
+                <SelectContent>
+                  {stores.map((store) => (
+                    <SelectItem key={store.id} value={store.id}>
+                      {store.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {editError && <p className="text-sm text-red-500">{editError}</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>
+              取消
+            </Button>
+            <Button onClick={handleUpdate} disabled={updating}>
+              {updating ? "保存中..." : "保存修改"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -57,3 +57,59 @@ export async function toggleStaffActive(id: string, isActive: boolean) {
     return { error: "操作失败，请重试" };
   }
 }
+
+export async function updateStaff(data: {
+  id: string;
+  name: string;
+  phone: string;
+  role: "ADMIN" | "STAFF";
+  storeId: string;
+}) {
+  const name = data.name.trim();
+  const phone = data.phone.trim();
+
+  if (!data.id || !name || !phone || !data.storeId) {
+    return { error: "姓名、手机号和门店不能为空" };
+  }
+
+  const existing = await prisma.user.findUnique({ where: { id: data.id } });
+  if (!existing) return { error: "店员不存在" };
+
+  if (phone !== existing.phone) {
+    const duplicate = await prisma.user.findUnique({ where: { phone } });
+    if (duplicate) return { error: "手机号已被其他店员使用" };
+  }
+
+  const store = await prisma.store.findUnique({ where: { id: data.storeId } });
+  if (!store) return { error: "门店不存在，请重新选择" };
+
+  const email = `${phone}@fastcat.com`;
+  const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+    data.id,
+    {
+      email,
+      email_confirm: true,
+      user_metadata: { role: data.role },
+    }
+  );
+
+  if (authError) {
+    return { error: authError.message ?? "更新登录账号失败" };
+  }
+
+  try {
+    await prisma.user.update({
+      where: { id: data.id },
+      data: {
+        name,
+        phone,
+        role: data.role,
+        storeId: data.storeId,
+      },
+    });
+    revalidatePath("/admin/staff");
+    return { success: true };
+  } catch {
+    return { error: "更新店员信息失败，请重试" };
+  }
+}
