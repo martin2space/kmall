@@ -33,6 +33,8 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  if (pathname === "/") return response;
+
   // 未登录 → 跳转 /login
   if (!user && pathname !== "/login") {
     return NextResponse.redirect(new URL("/login", request.url));
