@@ -18,7 +18,8 @@ export async function startReview(examId: string) {
   if (!exam) return { error: "考核任务不存在" };
   if (exam.reviewId) return { error: "考核已开始" };
 
-  const maxTotalScore = exam.standards.reduce((sum: number, s) => sum + s.maxScore, 0);
+  const maxTotalScore = exam.standards.reduce((sum: number, s: { maxScore: number }) => sum + s.maxScore, 0)
+;
 
   const review = await prisma.review.create({
     data: {
