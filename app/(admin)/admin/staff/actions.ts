@@ -41,7 +41,7 @@ export async function createStaff(data: {
     });
     revalidatePath("/admin/staff");
     return { success: true };
-  } catch (e) {
+  } catch {
     // Prisma 创建失败时回滚 Auth 用户
     await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
     return { error: "创建店员记录失败，请重试" };
